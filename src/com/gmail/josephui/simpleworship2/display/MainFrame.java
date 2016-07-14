@@ -80,7 +80,11 @@ public class MainFrame extends JFrame{
     setContentPane(PreviewPanel.getInstance());
     */
     
-    setContentPane(new JScrollPane(new LyricsPanel(Main.getAllLyrics().get(1))));
+    //setContentPane(new JScrollPane(new LyricsPanel(Main.getAllLyrics().get(1))));
+    LyricsPreviewPanel lyricsPreviewPanel = new LyricsPreviewPanel(Main.getAllLyrics().get(1), fonts);
+    lyricsPreviewPanel.setRenderDevice(localGraphicsEnvironment.getScreenDevices()[0]);
+    
+    setContentPane(lyricsPreviewPanel);
     
     pack();
     setLocationRelativeTo(null);

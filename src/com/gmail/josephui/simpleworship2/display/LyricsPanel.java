@@ -1,5 +1,7 @@
 package com.gmail.josephui.simpleworship2.display;
 
+import com.gmail.josephui.simpleworship2.display.event.LyricsSelectionEvent;
+import com.gmail.josephui.simpleworship2.display.event.LyricsSelectionListener;
 import com.gmail.josephui.simpleworship2.models.Lyrics;
 import com.gmail.josephui.simpleworship2.models.Section;
 import com.gmail.josephui.simpleworship2.models.Subsection;
@@ -13,20 +15,24 @@ import javax.swing.BoxLayout;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  *
  * @author Joseph Hui <josephui@gmail.com>
  */
-public class LyricsPanel extends JPanel{
+public class LyricsPanel extends JPanel {
   private final Lyrics lyrics;
   private ArrayList<SectionPanel> sectionPanels;
+  private ArrayList<LyricsSelectionListener> lyricsSelectionListeners;
   
   public LyricsPanel (Lyrics lyrics) {
     this.lyrics = lyrics;
     
-    
+    lyricsSelectionListeners = new ArrayList();
     sectionPanels = new ArrayList(lyrics.getSections().size());
+    
     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
     
     for (Section section : lyrics.getSections()) {
@@ -37,30 +43,46 @@ public class LyricsPanel extends JPanel{
     }
   }
   
-  private int maxPreferredWidth = 0;
+  public void addLyricsSelectionListener (LyricsSelectionListener listener) {
+      lyricsSelectionListeners.add(listener);
+  }
+  
+  void updateSubsectionLists (Section selectedSection, SectionPanel.SubsectionList selectedSubsection) {
+    for (SectionPanel sectionPanel : sectionPanels) {
+        for (SectionPanel.SubsectionList subsectionList : sectionPanel.subsectionLists) {
+            if (subsectionList == selectedSubsection) {
+              continue;
+            }
+            
+            if (sectionPanel.section == selectedSection) {
+                subsectionList.setSelectedIndex(selectedSubsection.getSelectedIndex());
+            } else {
+                subsectionList.clearSelection();
+            }
+        }
+    }
+  }
   
   class SectionPanel extends JPanel {
     final Section section;
-    final JList[] subsectionLists;
+    final SubsectionList[] subsectionLists;
     
     SectionPanel (Section section) {
       this.section = section;
       
-      List<String>[] firstHalfs  = new List[section.getSubsections().size()];
-      List<String>[] secondHalfs = new List[section.getSubsections().size()];
+      String[] firstHalfs  = new String[section.getSubsections().size()];
+      String[] secondHalfs = new String[section.getSubsections().size()];
       
       int i = 0;
       for (Subsection subsection : section.getSubsections()) {
-        firstHalfs[i] = subsection.getFirstHalf();
-        secondHalfs[i++] = subsection.getSecondHalf();
+        firstHalfs[i] = subsection.getFirstHalfAsHtml();
+        secondHalfs[i++] = subsection.getSecondHalfAsHtml();
       }
       
-      subsectionLists = new JList[] {
-        new JList(firstHalfs),
-        new JList(secondHalfs)
+      subsectionLists = new SubsectionList[] {
+        new SubsectionList(firstHalfs, ComponentOrientation.LEFT_TO_RIGHT),
+        new SubsectionList(secondHalfs, ComponentOrientation.RIGHT_TO_LEFT)
       };
-      
-      subsectionLists[1].setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
       
       setBorder(
         BorderFactory.createCompoundBorder(
@@ -71,17 +93,40 @@ public class LyricsPanel extends JPanel{
       
       setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
       
-      for (JList list : subsectionLists) {
-        list.setBorder(null);
-        list.setVisibleRowCount(section.getSubsections().size());
-        
+      for (SubsectionList list : subsectionLists) {
         add(new JScrollPane(list) {{
           setBorder(null);
         }});
       }
-      System.out.println(getPreferredSize());
-      System.out.println();
+      
       setMaximumSize(new Dimension(getMaximumSize().width, getPreferredSize().height));
+    }
+    
+    class SubsectionList extends JList {
+      SubsectionList self;
+        
+      SubsectionList (Object[] list, ComponentOrientation co) {
+        super(list);
+        setComponentOrientation(co);
+        
+        self = this;
+
+        setBorder(null);
+        setVisibleRowCount(section.getSubsections().size());
+        
+        addListSelectionListener(new ListSelectionListener() {
+          @Override
+          public void valueChanged(ListSelectionEvent e) {
+            if (e.getValueIsAdjusting()) {
+                updateSubsectionLists(section, self);
+                
+                for (LyricsSelectionListener listener : lyricsSelectionListeners) {
+                    listener.selectionChanged(new LyricsSelectionEvent(e.getSource(), self.getSelectedIndex(), section.getSubsections().get(self.getSelectedIndex())));
+                }
+            }
+          }
+        });
+      }
     }
   }
 }

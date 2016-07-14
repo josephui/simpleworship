@@ -64,7 +64,7 @@ public class Main {
         Lyrics lyrics = new LyricsParser(file).parseLyrics();
         allLyrics.add(lyrics);
         
-        System.out.println(lyrics.toConsoleString());
+        //System.out.println(lyrics.toConsoleString());
       } catch (IOException ioe) {
         ioe.printStackTrace();
       } catch (IllegalArgumentException iae) {

@@ -22,6 +22,16 @@ public class Subsection {
     return retString + "\n}";
   }
   
+  private static String getHalfAsHtml (ArrayList<String> half, boolean isFirst) {
+      String retString = (isFirst) ? "<html><p align=\"left\">" : "<html><p align=\"right\">";
+      
+      for (String s : half) {
+          retString += s + "<br/>";
+      }
+      
+      return retString + "</p></html>";
+  }
+  
   public Subsection (List<String> firstHalf, List<String> secondHalf) {
     this.firstHalf  = new ArrayList(firstHalf);
     this.secondHalf = new ArrayList(secondHalf);
@@ -31,8 +41,16 @@ public class Subsection {
     return Collections.unmodifiableList(firstHalf);
   }
   
+  public String getFirstHalfAsHtml () {
+    return getHalfAsHtml(firstHalf, true);
+  }
+  
   public List<String> getSecondHalf () {
     return Collections.unmodifiableList(secondHalf);
+  }
+  
+  public String getSecondHalfAsHtml () {
+    return getHalfAsHtml(secondHalf, false);
   }
   
   public List<String>[] getAllHalves () {

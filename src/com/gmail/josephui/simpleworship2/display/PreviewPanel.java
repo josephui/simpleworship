@@ -31,18 +31,6 @@ import javax.swing.SwingUtilities;
  * @author Joseph Hui <josephui@gmail.com>
  */
 public class PreviewPanel extends JPanel{
-  private static final PreviewPanel instance;
-  
-  static {
-    instance = new PreviewPanel();
-  }
-  
-  public static PreviewPanel getInstance () {
-    return instance;
-  }
-  
-  /*--------------------------------------------------------------------------*/
-  
   private BufferedImage buffer;
   private BufferedImage background;
   
@@ -51,29 +39,25 @@ public class PreviewPanel extends JPanel{
   
   private JLabel previewLabel;
   
-  private PreviewPanel () {
+  private Subsection currentSubsection;
+  static int counter = 0;
+  int instanceId;
+  public PreviewPanel () {instanceId = counter++;
     setLayout(new BorderLayout());
     
     buffer     = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
     background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
     
     renderedWindow = new JWindow() {{
-        try {
+      setContentPane(renderedLabel = new JLabel() {
+        @Override
+        protected void paintComponent (Graphics g) {
+          super.paintComponent(g);
           
-          
-          
-          setContentPane(renderedLabel = new JLabel() {
-            @Override
-            protected void paintComponent (Graphics g) {
-              super.paintComponent(g);
-              
-              g.drawImage(background, 0, 0, null);
-              g.drawImage(buffer, 0, 0, null);
-            }
-          });
-        } catch (Exception e) {}
-      
-        //setContentPane(renderedLabel = new JLabel());
+          g.drawImage(background, 0, 0, null);
+          g.drawImage(buffer, 0, 0, null);
+        }
+      });
     }};
 
     add(previewLabel = new JLabel() {
@@ -81,13 +65,36 @@ public class PreviewPanel extends JPanel{
       protected void paintComponent (Graphics g) {
         super.paintComponent(g);
 
-        Image scaledImage = getRenderedImage().getScaledInstance(getWidth(), getHeight(), Image.SCALE_FAST);
-        g.drawImage(scaledImage, 0, 0, null);
+        BufferedImage renderedImage = getRenderedImage();
+        int renderedWidthTimesPreviewHeight = renderedImage.getWidth() * getHeight();
+        int previewWidthTimesRenderedHeight = getWidth() * renderedImage.getHeight();
         
-        int x = (int)(getWidth() * Double.parseDouble(Main.getProperty("margin_left")));
-        int y = (int)(getHeight() * Double.parseDouble(Main.getProperty("margin_top")));
-        int w = getWidth() - x - (int)(getWidth() * Double.parseDouble(Main.getProperty("margin_right")));
-        int h = getHeight() - y - (int)(getHeight() * Double.parseDouble(Main.getProperty("margin_bottom")));
+        int newWidth  = getWidth();
+        int newHeight = getHeight();
+        int newX = 0;
+        int newY = 0;
+        
+        if (renderedWidthTimesPreviewHeight < previewWidthTimesRenderedHeight) {
+            // If original height is bigger, we keep newHeight and scale newWidth down
+            newWidth = getHeight() * renderedImage.getWidth() / renderedImage.getHeight();
+            newX     = (getWidth() - newWidth) / 2;
+        } else if (renderedWidthTimesPreviewHeight > previewWidthTimesRenderedHeight) {
+            newHeight = getWidth() * renderedImage.getHeight() / renderedImage.getWidth();
+            newY      = (getHeight() - newHeight) / 2;
+        }
+        
+        Image scaledImage = getRenderedImage().getScaledInstance(newWidth, newHeight, Image.SCALE_FAST);
+        g.drawImage(scaledImage, newX, newY, null);
+        
+        int marginLeft   = (int)(newWidth * Double.parseDouble(Main.getProperty("margin_left")));
+        int marginTop    = (int)(newHeight * Double.parseDouble(Main.getProperty("margin_top")));
+        int marginRight  = (int)(newWidth * Double.parseDouble(Main.getProperty("margin_right")));
+        int marginBottom = (int)(newHeight * Double.parseDouble(Main.getProperty("margin_bottom")));
+        
+        int x = newX + marginLeft;
+        int y = newY + marginTop;
+        int w = getWidth() - 2*newX - marginLeft - marginRight;
+        int h = getHeight() - 2*newY - marginTop - marginBottom;
         
         g.setColor(Color.RED);
         g.drawRect(x, y, w, h);
@@ -112,6 +119,7 @@ public class PreviewPanel extends JPanel{
     renderedWindow.setLocation(bounds.x, bounds.y);
     renderedWindow.setSize(bounds.width, bounds.height);
     renderedLabel.setPreferredSize(new Dimension(bounds.width, bounds.height));
+    previewLabel.setPreferredSize(new Dimension(bounds.width / 4, bounds.height / 4));
     buffer     = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB_PRE);
     background = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB_PRE);
   }
@@ -124,7 +132,7 @@ public class PreviewPanel extends JPanel{
     background.flush();
     
     Graphics2D g = (Graphics2D)background.getGraphics();
-    g.drawImage(img, 0, 0, background.getWidth(), background.getHeight(), this);
+    g.drawImage(img, 0, 0, background.getWidth(), background.getHeight(), null);
   }
   
   public void setRenderedWindowBackground (Color c) {
@@ -136,6 +144,8 @@ public class PreviewPanel extends JPanel{
   }
   
   public void setSubsection (Subsection subsection, Font[] fonts) {
+    currentSubsection = subsection;
+      
     buffer.flush();
     
     List<String>[] allHalves = subsection.getAllHalves();
@@ -161,15 +171,14 @@ public class PreviewPanel extends JPanel{
         
         // If it's the bottom lyrics, we need to invert y
         g.drawString(line, x, (i == 0) ? y : renderedWindow.getHeight() - y);
-        System.out.println("Drawing string `" + line + "` at (" + x + ", " + ((i == 0) ? y : renderedWindow.getHeight() - y) + ")");
+        //System.out.println("Drawing string `" + line + "` at (" + x + ", " + ((i == 0) ? y : renderedWindow.getHeight() - y) + ")");
         
         y += (i == 0) ? metrics.getDescent() : metrics.getAscent();
       }
     }
   }
   
-  private void drawString (Graphics2D g, String text, int y) {
-        FontMetrics metrics = g.getFontMetrics();
-    //Later can implement shadow here
+  public String toString() {
+      return instanceId + ": " + ((currentSubsection == null) ? "<No Subsection>" : currentSubsection.toConsoleString());
   }
 }
