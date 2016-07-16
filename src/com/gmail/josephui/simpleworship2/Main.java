@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -104,6 +105,13 @@ public class Main {
   /*--------------------------------------------------------------------------*/
   
   private Main () {
-    MainFrame mainFrame = MainFrame.getInstance();
+    final MainFrame frame = MainFrame.getInstance();
+    
+    SwingUtilities.invokeLater(new Runnable () {
+      @Override
+      public void run() {
+        frame.setVisible(true);
+      }
+    });
   }
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
@@ -31,40 +32,71 @@ import javax.swing.SwingUtilities;
  * @author Joseph Hui <josephui@gmail.com>
  */
 public class PreviewPanel extends JPanel{
-  private BufferedImage buffer;
-  private BufferedImage background;
+  private static JWindow renderedWindow;
+  private static JLabel renderedLabel;
+  private static PreviewPanel currentPreviewPanel;
   
-  private JWindow renderedWindow;
-  private JLabel renderedLabel;
-  
-  private JLabel previewLabel;
-  
-  private Subsection currentSubsection;
-  static int counter = 0;
-  int instanceId;
-  public PreviewPanel () {instanceId = counter++;
-    setLayout(new BorderLayout());
-    
-    buffer     = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
-    background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
-    
+  static {
     renderedWindow = new JWindow() {{
       setContentPane(renderedLabel = new JLabel() {
         @Override
         protected void paintComponent (Graphics g) {
           super.paintComponent(g);
+          System.out.println("Drawing stuff1");
+          if (currentPreviewPanel == null) {
+              return;
+          }
+          System.out.println("Drawing stuff2");
+          if (OptionPanel.getInstance().isBlack()) {
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, renderedLabel.getWidth(), renderedLabel.getHeight());;
+            return;
+          }
+          System.out.println("Drawing stuff3");
+          g.drawImage(currentPreviewPanel.background, 0, 0, renderedLabel);
           
-          g.drawImage(background, 0, 0, null);
-          g.drawImage(buffer, 0, 0, null);
+          if (OptionPanel.getInstance().isClear()) {
+              return;
+          }
+          System.out.println("Drawing stuff4");
+          g.drawImage(currentPreviewPanel.buffer, 0, 0, renderedLabel);
         }
       });
     }};
+  }
+  
+  public static void repaintRenderedWindow () {
+      renderedLabel.repaint();
+  }
+  
+  public static void setRenderedWindowVisible (boolean b) {
+      renderedWindow.setVisible(b);
+  }
+  
+  
+  private transient BufferedImage buffer;
+  private transient BufferedImage background;
+  private transient BufferedImage tag;
+  
+  
+  private JLabel previewLabel;
+  
+  private Subsection currentSubsection;
+  
+  public PreviewPanel () {
+    setLayout(new BorderLayout());
+    
+    buffer     = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
+    background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
+    tag        = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
+    
+
 
     add(previewLabel = new JLabel() {
       @Override
       protected void paintComponent (Graphics g) {
         super.paintComponent(g);
-
+        
         BufferedImage renderedImage = getRenderedImage();
         int renderedWidthTimesPreviewHeight = renderedImage.getWidth() * getHeight();
         int previewWidthTimesRenderedHeight = getWidth() * renderedImage.getHeight();
@@ -83,7 +115,7 @@ public class PreviewPanel extends JPanel{
             newY      = (getHeight() - newHeight) / 2;
         }
         
-        Image scaledImage = getRenderedImage().getScaledInstance(newWidth, newHeight, Image.SCALE_FAST);
+        Image scaledImage = renderedImage.getScaledInstance(newWidth, newHeight, Image.SCALE_FAST);
         g.drawImage(scaledImage, newX, newY, null);
         
         int marginLeft   = (int)(newWidth * Double.parseDouble(Main.getProperty("margin_left")));
@@ -98,19 +130,53 @@ public class PreviewPanel extends JPanel{
         
         g.setColor(Color.RED);
         g.drawRect(x, y, w, h);
+        
+        g.drawImage(tag, newX, newY, null);
       }
     }, BorderLayout.CENTER);
   }
   
   private BufferedImage getRenderedImage () {
-    BufferedImage img = new BufferedImage(renderedLabel.getPreferredSize().width, renderedLabel.getPreferredSize().height, BufferedImage.TYPE_INT_ARGB_PRE);
+    int width  = Math.max(renderedLabel.getPreferredSize().width, 1);
+    int height = Math.max(renderedLabel.getPreferredSize().height, 1);
+    
+    BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
     Graphics2D g = img.createGraphics();
-    g.setColor(previewLabel.getForeground());
-    g.setFont(previewLabel.getFont());
-
-    SwingUtilities.paintComponent(g, renderedLabel, previewLabel, 0, 0, img.getWidth(), img.getHeight());
-
+    
+    g.drawImage(background, 0, 0, null);
+    g.drawImage(buffer, 0, 0, null);
+    
+    /*if (renderedWindow.isVisible()) {
+      renderedWindow.paintAll(g);
+    } else {
+      SwingUtilities.paintComponent(g, renderedLabel, previewLabel, 0, 0, img.getWidth(), img.getHeight());
+    }*/
+    
     return img.getSubimage(0, 0, img.getWidth(), img.getHeight());
+  }
+  
+  public void setDisplayTag (String text, Font font, Color backgroundColor, Color foregroundColor) {
+      Graphics g = tag.getGraphics();
+      
+      FontMetrics metrics = g.getFontMetrics(font);
+      Rectangle2D rectangle = metrics.getStringBounds(text, g);
+      
+      int w = (int)rectangle.getWidth();
+      int h = (int)rectangle.getHeight();
+      
+      int MARGIN = 5;
+      
+      tag = new BufferedImage(2 * MARGIN + w, 2 * MARGIN + h, BufferedImage.TYPE_INT_ARGB_PRE);
+      Graphics2D g2 = (Graphics2D)tag.getGraphics();
+      g2.setColor(backgroundColor);
+      g2.fillRect(0, 0, 2 * MARGIN + w, 2 * MARGIN + h);
+      g2.setColor(foregroundColor);
+      g2.setFont(font);
+      g2.drawString(text, MARGIN, MARGIN + metrics.getAscent());
+  }
+  
+  public void setAsCurrentPreviewPanel () {
+      currentPreviewPanel = this;
   }
   
   public void setRenderedDevice (GraphicsDevice device) {
@@ -122,10 +188,6 @@ public class PreviewPanel extends JPanel{
     previewLabel.setPreferredSize(new Dimension(bounds.width / 4, bounds.height / 4));
     buffer     = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB_PRE);
     background = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB_PRE);
-  }
-  
-  public void setRenderedWindowVisible (boolean b) {
-    renderedWindow.setVisible(b);
   }
   
   public void setRenderedWindowBackground (Image img) {
@@ -178,7 +240,8 @@ public class PreviewPanel extends JPanel{
     }
   }
   
+  @Override
   public String toString() {
-      return instanceId + ": " + ((currentSubsection == null) ? "<No Subsection>" : currentSubsection.toConsoleString());
+      return (currentSubsection == null) ? "<No Subsection>" : currentSubsection.toConsoleString();
   }
 }

@@ -136,7 +136,14 @@ public class LyricsParser {
 
           if (!buffer.peek().isEmpty()) {
             String name = buffer.peek().substring(1, buffer.peek().length()-1);
-            sections.addFirst(new Section(name, subsections));
+            Section thisSection = new Section(name, subsections);
+            
+            if (!sections.isEmpty()) {
+              thisSection.setNextSection(sections.getFirst());
+              sections.getFirst().setPrevSection(thisSection);
+            }
+            
+            sections.addFirst(thisSection);
 
             subsections.clear();
           }
