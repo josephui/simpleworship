@@ -11,6 +11,8 @@ import java.util.List;
 public class Section {
   private final String name;
   private final ArrayList<Subsection> subsections;
+  private Section prevSection;
+  private Section nextSection;
   
   public Section (String name, List<Subsection> subsections) {
     this.name        = name;
@@ -23,6 +25,22 @@ public class Section {
   
   public List<Subsection> getSubsections () {
     return Collections.unmodifiableList(subsections);
+  }
+  
+  public void setPrevSection (Section s) {
+    prevSection = s;
+  }
+  
+  public void setNextSection (Section s) {
+    nextSection = s;
+  }
+  
+  public Section getPrevSection () {
+    return prevSection;
+  }
+  
+  public Section getNextSection () {
+    return nextSection;
   }
   
   public String toConsoleString () {

@@ -11,6 +11,7 @@ import java.util.List;
 public class Subsection {
   private final ArrayList<String> firstHalf;
   private final ArrayList<String> secondHalf;
+  private final int maxLines;
   
   private static String getHalfToString (ArrayList<String> half) {
     String retString = "HALF { ";
@@ -22,11 +23,18 @@ public class Subsection {
     return retString + "\n}";
   }
   
-  private static String getHalfAsHtml (ArrayList<String> half, boolean isFirst) {
+  private String getHalfAsHtml (ArrayList<String> half, boolean isFirst) {
       String retString = (isFirst) ? "<html><p align=\"left\">" : "<html><p align=\"right\">";
       
+      int counter = 0;
+
       for (String s : half) {
           retString += s + "<br/>";
+          counter++;
+      }
+      
+      while (counter++ < maxLines) {
+          retString += "<br/>";
       }
       
       return retString + "</p></html>";
@@ -35,6 +43,8 @@ public class Subsection {
   public Subsection (List<String> firstHalf, List<String> secondHalf) {
     this.firstHalf  = new ArrayList(firstHalf);
     this.secondHalf = new ArrayList(secondHalf);
+    
+    maxLines = Math.max(firstHalf.size(), secondHalf.size());
   }
   
   public List<String> getFirstHalf () {

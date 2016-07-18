@@ -3,6 +3,7 @@ package com.gmail.josephui.simpleworship2;
 import com.gmail.josephui.simpleworship2.display.MainFrame;
 import com.gmail.josephui.simpleworship2.file.LyricsParser;
 import com.gmail.josephui.simpleworship2.models.Lyrics;
+import java.awt.Color;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -11,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import javax.imageio.ImageIO;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -73,8 +76,34 @@ public class Main {
     }
   }
   
+  public static void setProperty (String name, String value) {
+    config.setProperty(name, value);
+  }
+  
   public static String getProperty (String name) {
     return config.getProperty(name);
+  }
+  
+  private static Object background;
+          
+  public static Object getBackground () {
+      if (background != null) {
+          return background;
+      }
+      
+      String backgroundString = getProperty("background");
+      
+      try {
+          int bgRgb = Integer.decode(backgroundString);
+          return background = new Color(bgRgb);
+      } catch (NumberFormatException e) {
+          try {
+            return background = ImageIO.read(new File(backgroundString));
+          } catch (IOException ioe) {
+              ioe.printStackTrace();
+              return null;
+          }
+      }
   }
   
   public static List<Lyrics> getAllLyrics () {
@@ -104,6 +133,13 @@ public class Main {
   /*--------------------------------------------------------------------------*/
   
   private Main () {
-    MainFrame mainFrame = MainFrame.getInstance();
+    final MainFrame frame = MainFrame.getInstance();
+    
+    SwingUtilities.invokeLater(new Runnable () {
+      @Override
+      public void run() {
+        frame.setVisible(true);
+      }
+    });
   }
 }
