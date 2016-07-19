@@ -133,12 +133,10 @@ public class Main {
   /*--------------------------------------------------------------------------*/
   
   private Main () {
-    final MainFrame frame = MainFrame.getInstance();
-    
     SwingUtilities.invokeLater(new Runnable () {
       @Override
       public void run() {
-        frame.setVisible(true);
+        MainFrame.getInstance().setVisible(true);
       }
     });
   }

@@ -2,42 +2,24 @@ package com.gmail.josephui.simpleworship2.display;
 
 import com.gmail.josephui.simpleworship2.models.Lyrics;
 import com.gmail.josephui.simpleworship2.models.Search;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.geom.Rectangle2D;
 import java.util.List;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.FocusManager;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 /**
- *
+ * @xToSelf Thread-safe
  * @author Joseph Hui <josephui@gmail.com>
  */
-public class SearchResultPanel extends JPanel{
+public class SearchResultPanel extends JPanel {
   private static final SearchResultPanel instance;
   
   static {
@@ -49,139 +31,104 @@ public class SearchResultPanel extends JPanel{
   }
   
   /*--------------------------------------------------------------------------*/
-  /*
   
-          
-    addMouseListener(new MouseAdapter () {
-      @Override
-      public void mouseClicked(MouseEvent e) {
-        if (SearchField.getInstance().isFocusOwner()) {
-            SearchField.getInstance().transferFocus();
-        }
-      }
-    });
-  */
-  private final JList lyricsList;
+  private final JList<Lyrics> lyricsList;
   private final JScrollPane scrollPane;
   
   private SearchResultPanel () {
     setLayout(null);
     
-    add(scrollPane = new JScrollPane(lyricsList  = new JList() {
-      {
-        addMouseListener(new MouseAdapter () {
-          @Override
-          public void mouseClicked(MouseEvent e) {
-            if (e.getComponent() instanceof JList) {
-                JList list = (JList)e.getComponent();
-                int i = list.locationToIndex(e.getPoint());
-                list.setSelectedIndex(i);
-                
-                openSelectedLyrics();
-            }
-            /*
-            e.translatePoint(getX(), getY());
-
-            for (MouseListener listener : instance.getMouseListeners()) {
-              listener.mouseClicked(e);
-            }*/
-          }
-        });
-
-        setCellRenderer(new DefaultListCellRenderer() {
-          {
-            setOpaque(false);
+    add(scrollPane = new JScrollPane(lyricsList  = new JList<Lyrics>() {{
+      addMouseListener(new MouseAdapter () {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+          if (!SwingUtilities.isEventDispatchThread()) {
+            throw new RuntimeException ("Not invoked from eventDispatchThread");
           }
           
-          @Override
-          public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            String s = value.toString();
-            setText(s);
-            
-            if (isSelected) {
-                setBackground(Color.LIGHT_GRAY);
-                setForeground(Color.WHITE);
-            } else {
-                setBackground(Color.GRAY);
-                setForeground(Color.LIGHT_GRAY);
-            }
-            setHorizontalAlignment(CENTER);
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-            setOpaque(false);
-            return this;
+          if (e.getComponent() instanceof JList) {
+            JList list = (JList)e.getComponent();
+            int index = list.locationToIndex(e.getPoint());
+            list.setSelectedIndex(index);
+
+            openSelectedLyrics();
           }
+        }
+      });
 
-          @Override
-          protected void paintComponent(Graphics g) {
-            g.setColor(new Color(0, 0, 0, 128));
+      setCellRenderer(new DefaultListCellRenderer() {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+          setText(value.toString());
 
-            Insets insets = getInsets();
-            g.fillRect(
-              insets.left,
-              insets.top,
-              getWidth() - insets.left - insets.right, 
-              getHeight() - insets.top - insets.bottom
-            );
-
-            super.paintComponent(g);
+          if (isSelected) {
+            setBackground(Color.LIGHT_GRAY);
+            setForeground(Color.WHITE);
+          } else {
+            setBackground(Color.GRAY);
+            setForeground(Color.LIGHT_GRAY);
           }
-        });
+          
+          setHorizontalAlignment(CENTER);
+          setEnabled(list.isEnabled());
+          setFont(list.getFont());
+          setOpaque(false);
+          return this;
+        }
 
-        setOpaque(false);
-      }
-    }) {{
+        @Override
+        protected void paintComponent(Graphics g) {
+          g.setColor(new Color(0, 0, 0, 128));
+
+          Insets insets = getInsets();
+          
+          int x = insets.left;
+          int y = insets.top;
+          int w = getWidth() - insets.left - insets.right;
+          int h = getHeight() - insets.top - insets.bottom;
+          
+          g.fillRect(x, y, w, h);
+
+          super.paintComponent(g);
+        }
+      });
+
+      setOpaque(false);
+    }}) {{
         setBorder(null);
         setOpaque(false);
         
         getViewport().setOpaque(false);
     }});
     
-    SearchField.getInstance().getDocument().addDocumentListener(new DocumentListener() {
-      @Override
-      public void insertUpdate(DocumentEvent e) {
-        updateLyricsList();
-      }
-
-      @Override
-      public void removeUpdate(DocumentEvent e) {
-        updateLyricsList();
-      }
-
-      @Override
-      public void changedUpdate(DocumentEvent e) {
-        updateLyricsList();
-      }
-    });
-    
     setOpaque(false);
   }
   
   public void openSelectedLyrics () {
-        SearchField.getInstance().setText("");
-        SearchField.getInstance().transferFocus();
-        
-        MainTabbedPane tabbedPane = MainTabbedPane.getInstance();
-        LyricsPreviewPanel panel = tabbedPane.addLyrics(getCurrentlySelectedLyrics());
-        tabbedPane.setSelectedComponent(panel);
-        
-        MainSplitPane.getInstance().setTopPane(tabbedPane);
-  }
-  
-  @Override
-  public void addMouseListener(MouseListener listener) {
-      //lyricsList.addMouseListener(listener);
-      super.addMouseListener(listener);
-  }
-  
-  @Override
-  public void invalidate () {
-    updateLyricsList();
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+
+    SearchField.getInstance().resetTextAndTransferFocus();
     
-    super.invalidate();
+    final MainTabbedPane mainTabbedPane = MainTabbedPane.getInstance();
+    final Lyrics currentlySelectedLyrics = lyricsList.getModel().getElementAt(lyricsList.getSelectedIndex());
+    
+    SwingUtilities.invokeLater(new Runnable () {
+      @Override
+      public void run() {
+        LyricsPreviewPanel lyricsPreviewPanel = mainTabbedPane.addLyrics(currentlySelectedLyrics);
+        mainTabbedPane.setSelectedComponent(lyricsPreviewPanel);
+        MainSplitPane.getInstance().setTopPane(mainTabbedPane);
+      }
+    });
   }
   
   public void scrollUp () {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+    
     int i = lyricsList.getSelectedIndex() - 1;
     if (i >= 0) {
       lyricsList.setSelectedIndex(i);
@@ -189,19 +136,23 @@ public class SearchResultPanel extends JPanel{
   }
   
   public void scrollDown () {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+    
     int i = lyricsList.getSelectedIndex() + 1;
     if (i < lyricsList.getModel().getSize()) {
       lyricsList.setSelectedIndex(i);
     }
   }
   
-  public Lyrics getCurrentlySelectedLyrics () {
-    return (Lyrics)lyricsList.getModel().getElementAt(lyricsList.getSelectedIndex());
-  }
-  
-  private void updateLyricsList () {
+  public void updateLyricsList () {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+    
     List<Lyrics> searchResults = Search.findLyrics(SearchField.getInstance().getText());
-    Object[] searchResultsArray = searchResults.toArray();
+    Lyrics[] searchResultsArray = searchResults.toArray(new Lyrics[searchResults.size()]);
     
     lyricsList.setListData(searchResultsArray);
     
@@ -209,7 +160,7 @@ public class SearchResultPanel extends JPanel{
       lyricsList.setSelectedIndex(0);
     }
     
-    lyricsList.setVisibleRowCount(Math.max(searchResultsArray.length, 20));
+    lyricsList.setVisibleRowCount(Math.min(searchResultsArray.length, 20));
     
     int widthBuffer = SearchField.getInstance().getWidth() / 20;
     scrollPane.setSize(SearchField.getInstance().getWidth() - 2*widthBuffer, scrollPane.getPreferredSize().height);

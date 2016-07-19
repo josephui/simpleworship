@@ -1,31 +1,16 @@
 package com.gmail.josephui.simpleworship2.display;
 
 import com.gmail.josephui.simpleworship2.Main;
-import static com.gmail.josephui.simpleworship2.Main.getProperty;
-import java.awt.AWTEvent;
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
 import java.awt.DisplayMode;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Point;
-import java.awt.Toolkit;
-import java.awt.event.AWTEventListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.io.File;
-import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 /**
@@ -103,27 +88,31 @@ public class MainFrame extends JFrame {
       MainTabbedPane tabbedPane = MainTabbedPane.getInstance();
       OptionPanel optionPane    = OptionPanel.getInstance();
       
-      //splitPane.setTopPane(tabbedPane);
-      
       add(SearchField.getInstance(), BorderLayout.NORTH);
       add(splitPane, BorderLayout.CENTER);
       add(optionPane, BorderLayout.SOUTH);
     }});
     
     final SearchResultPanel searchResultPanel = SearchResultPanel.getInstance();
-    setGlassPane(searchResultPanel);
+    resetGlassPane();
     
     addComponentListener(new ComponentAdapter () {
       @Override
       public void componentResized(ComponentEvent ce) {
-        searchResultPanel.invalidate();
+        searchResultPanel.updateLyricsList();
       }
     });
+    
+    ProgramWindow.getInstance().setGraphicsDevice(MainFrame.getSelectedGraphicsDevice());
     
     setSize(1024, 768);
     setLocationRelativeTo(null);
     
     //setExtendedState(MAXIMIZED_BOTH);
-    setVisible(true);
+  }
+  
+  // Terrible hack because whoever wrote DnDTabbedPane stole my GlassPane
+  public void resetGlassPane () {
+    setGlassPane(SearchResultPanel.getInstance());
   }
 }
