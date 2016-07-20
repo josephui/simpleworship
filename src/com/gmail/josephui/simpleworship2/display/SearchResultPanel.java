@@ -19,7 +19,7 @@ import javax.swing.SwingUtilities;
  * @xToSelf Thread-safe
  * @author Joseph Hui <josephui@gmail.com>
  */
-public class SearchResultPanel extends JPanel {
+public final class SearchResultPanel extends JPanel {
   private static final SearchResultPanel instance;
   
   static {
@@ -120,6 +120,8 @@ public class SearchResultPanel extends JPanel {
         LyricsPreviewPanel lyricsPreviewPanel = mainTabbedPane.addLyrics(currentlySelectedLyrics);
         mainTabbedPane.setSelectedComponent(lyricsPreviewPanel);
         MainSplitPane.getInstance().setTopPane(mainTabbedPane);
+        MainFrame.getInstance().revalidate();
+        MainFrame.getInstance().repaint();
       }
     });
   }
@@ -151,6 +153,10 @@ public class SearchResultPanel extends JPanel {
       throw new RuntimeException ("Not invoked from eventDispatchThread");
     }
     
+    if (!isVisible()) {
+        return;
+    }
+    
     List<Lyrics> searchResults = Search.findLyrics(SearchField.getInstance().getText());
     Lyrics[] searchResultsArray = searchResults.toArray(new Lyrics[searchResults.size()]);
     
@@ -165,6 +171,12 @@ public class SearchResultPanel extends JPanel {
     int widthBuffer = SearchField.getInstance().getWidth() / 20;
     scrollPane.setSize(SearchField.getInstance().getWidth() - 2*widthBuffer, scrollPane.getPreferredSize().height);
     scrollPane.setLocation(SearchField.getInstance().getX() + widthBuffer, SearchField.getInstance().getHeight());
+  }
+  
+  public void setVisible(boolean b) {
+      super.setVisible(b);
+      
+      //new RuntimeException().printStackTrace();
   }
 }
 

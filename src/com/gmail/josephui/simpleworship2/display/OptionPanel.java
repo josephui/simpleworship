@@ -18,10 +18,10 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 
 /**
- *
+ * @xToSelf Thread-safe
  * @author Joseph Hui <josephui@gmail.com>
  */
-public class OptionPanel extends JPanel {
+public final class OptionPanel extends JPanel {
   private static final OptionPanel instance;
   
   static {
@@ -33,17 +33,17 @@ public class OptionPanel extends JPanel {
   }
   
   private static class ButtonLabel extends JLabel {
-    Border etchedBorder;
-    Border raisedBorder;
-    Border loweredBorder;
+    final Border etchedBorder;
+    final Border raisedBorder;
+    final Border loweredBorder;
 
-    AtomicBoolean isToggled;
-    AtomicBoolean isDisabled;
+    final AtomicBoolean isToggled;
+    final AtomicBoolean isDisabled;
 
-    Color onBackground;
-    Color onForeground;
-    Color offBackground;
-    Color offForeground;
+    final Color onBackground;
+    final Color onForeground;
+    final Color offBackground;
+    final Color offForeground;
       
     ButtonLabel (String text, Color background, Color foreground) {
       etchedBorder  = BorderFactory.createEtchedBorder();
@@ -136,6 +136,7 @@ public class OptionPanel extends JPanel {
             @Override
             public void run() {
               ProgramWindow.getInstance().setGraphicsDevice(getItemAt(index));
+              MainSplitPane.getInstance().repaintPreviewPanels();
             }
           });
         }

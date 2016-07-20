@@ -2,22 +2,27 @@ package com.gmail.josephui.simpleworship2.display;
 
 import com.gmail.josephui.simpleworship2.Main;
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.DefaultFocusTraversalPolicy;
+import java.awt.Dimension;
 import java.awt.DisplayMode;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 /**
- *
+ * @xToSelf Thread-safe
  * @author Joseph Hui <josephui@gmail.com>
  */
-public class MainFrame extends JFrame {
+public final class MainFrame extends JFrame {
   private static final MainFrame instance;
 
   private static GraphicsEnvironment localGraphicsEnvironment;
@@ -68,15 +73,6 @@ public class MainFrame extends JFrame {
   
   /*--------------------------------------------------------------------------*/
   
-  @Override
-  public void paint(Graphics g) {
-    super.paint(g);
-
-    //setMinimumSize(getPreferredSize());
-  }
-  
-  LyricsPreviewPanel lyricsPreviewPanel;
-  
   private MainFrame () {
     setDefaultCloseOperation(EXIT_ON_CLOSE);
     setTitle(Main.APPLICATION_NAME);
@@ -93,17 +89,24 @@ public class MainFrame extends JFrame {
       add(optionPane, BorderLayout.SOUTH);
     }});
     
-    final SearchResultPanel searchResultPanel = SearchResultPanel.getInstance();
-    resetGlassPane();
-    
-    addComponentListener(new ComponentAdapter () {
-      @Override
-      public void componentResized(ComponentEvent ce) {
-        searchResultPanel.updateLyricsList();
-      }
+    setFocusTraversalPolicy(new DefaultFocusTraversalPolicy() {
+        @Override
+        protected boolean accept (Component c) {
+            return c != SearchField.getInstance();
+        }
     });
     
+    resetGlassPane();
+    
     ProgramWindow.getInstance().setGraphicsDevice(MainFrame.getSelectedGraphicsDevice());
+    
+    Object background = Main.getBackground();
+    if (background instanceof Color) {
+        ProgramWindow.getInstance().setBackgroundColor((Color)background);
+    } else if (background instanceof BufferedImage) {
+        ProgramWindow.getInstance().setBackgroundImage((BufferedImage)background);
+    }
+    
     
     setSize(1024, 768);
     setLocationRelativeTo(null);
@@ -111,8 +114,46 @@ public class MainFrame extends JFrame {
     //setExtendedState(MAXIMIZED_BOTH);
   }
   
+  @Override
+  public void invalidate () {
+    super.invalidate();
+    
+    SwingUtilities.invokeLater(new Runnable () {
+      @Override
+      public void run() {
+        SearchResultPanel.getInstance().updateLyricsList();
+        /*
+        Dimension currentSize   = getSize();
+        Dimension preferredSize = getPreferredSize();
+        
+        if (currentSize.width < preferredSize.width || currentSize.height < preferredSize.height) {
+          int newWidth  = Math.max(currentSize.width, preferredSize.width);
+          int newHeight = Math.max(currentSize.height, preferredSize.height);
+        
+          int screenWidth  = getSelectedGraphicsDevice().getDisplayMode().getWidth();
+          int screenHeight = getSelectedGraphicsDevice().getDisplayMode().getHeight();
+        
+          newWidth  = Math.min(newWidth, screenWidth);
+          newHeight = Math.min(newWidth, screenHeight);
+          
+          //setMinimumSize(getPreferredSize());
+          setSize(newWidth, newHeight);
+          
+          revalidate();
+          repaint();
+          
+          setLocationRelativeTo(null);
+        }*/
+      }
+    });
+  }
+  
   // Terrible hack because whoever wrote DnDTabbedPane stole my GlassPane
   public void resetGlassPane () {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+    
     setGlassPane(SearchResultPanel.getInstance());
   }
 }

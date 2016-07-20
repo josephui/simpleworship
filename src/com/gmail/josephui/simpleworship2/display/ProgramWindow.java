@@ -2,6 +2,7 @@ package com.gmail.josephui.simpleworship2.display;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -13,7 +14,7 @@ import javax.swing.SwingUtilities;
  * @xToSelf Thread-safe
  * @author Joseph Hui <josephui@gmail.com>
  */
-public class ProgramWindow extends JWindow {
+public final class ProgramWindow extends JWindow {
   private static final ProgramWindow instance;
   
   static {
@@ -84,6 +85,15 @@ public class ProgramWindow extends JWindow {
   public void setLyricsImage (BufferedImage lyricsImage) {
     this.lyricsImage = lyricsImage;
     repaint();
+  }
+  
+  public void setBackgroundColor (Color color) {
+      BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB_PRE);
+      Graphics2D g = image.createGraphics();
+      g.setColor(color);
+      g.fillRect(0, 0 , image.getWidth(), image.getHeight());
+      
+      setBackgroundImage(image);
   }
   
   public void setBackgroundImage (BufferedImage backgroundImage) {

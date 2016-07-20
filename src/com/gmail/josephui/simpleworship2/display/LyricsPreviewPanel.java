@@ -18,7 +18,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 /**
- *
+ * @xToSelf Thread-safe
  * @author Joseph Hui <josephui@gmail.com>
  */
 public class LyricsPreviewPanel extends JPanel {
@@ -26,13 +26,8 @@ public class LyricsPreviewPanel extends JPanel {
   private Lyrics lyrics;
   private ConcurrentHashMap<Subsection, PreviewPanel> subsectionToPanelMap;
   
-  private LyricsPreviewPanel thisLyricsPreviewPanel;
-  private GraphicsDevice currentRenderDevice;
   private PreviewPanel currentPreviewPanel;
   private Font[] fonts;
-  
-  private Font tagFont;
-  private Color tagForegroundColor;
   
   private boolean isProgram;
   
@@ -42,7 +37,6 @@ public class LyricsPreviewPanel extends JPanel {
   }
   
   public LyricsPreviewPanel (Lyrics lyrics, final Font[] fonts, final boolean isProgram) {
-    thisLyricsPreviewPanel = this;
     this.isProgram = isProgram;
     
     subsectionToPanelMap = new ConcurrentHashMap();
@@ -57,7 +51,7 @@ public class LyricsPreviewPanel extends JPanel {
     
     setLayout(new BorderLayout());
     
-    add(new JScrollPane(lyricsPanel = new LyricsPanel(lyrics, thisLyricsPreviewPanel))  {
+    add(new JScrollPane(lyricsPanel = new LyricsPanel(lyrics, this))  {
       {
         setBorder(null);
         setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_ALWAYS);
@@ -74,34 +68,18 @@ public class LyricsPreviewPanel extends JPanel {
     lyricsPanel.addLyricsSelectionListener(new LyricsSelectionListener () {
       @Override
       public void selectionChanged(LyricsSelectionEvent e) {
-        PreviewPanel oldPreviewPanel = currentPreviewPanel;
-        
-        if (oldPreviewPanel != null) {
-          remove(oldPreviewPanel);
+        if (currentPreviewPanel != null) {
+          remove(currentPreviewPanel);
         }
             
         add(currentPreviewPanel = subsectionToPanelMap.get(e.getSubsection()), BorderLayout.CENTER);
         
         if (isProgram && OptionPanel.getInstance().isLive()) {
           currentPreviewPanel.setAsCurrentPreviewPanel();
-          //currentPreviewPanel.setRenderedWindowVisible(true);
-          if (oldPreviewPanel != null) {
-          //  oldPreviewPanel.setRenderedWindowVisible(false);
-          }
         }
         
         currentPreviewPanel.revalidate();
-        invalidate();
         repaint();
-      }
-    });
-    
-    lyricsPanel.addMouseListener(new MouseAdapter() {
-      @Override
-      public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          return;
-        }
       }
     });
   }
@@ -111,21 +89,18 @@ public class LyricsPreviewPanel extends JPanel {
       throw new RuntimeException ("Not invoked from eventDispatchThread");
     }
 
-      if (!isProgram) {
-        MainTabbedPane parent = (MainTabbedPane)getParent();
-        LyricsPreviewPanel copy = new LyricsPreviewPanel(lyrics, fonts, true);
-        //copy.setRenderDevice(currentRenderDevice);
-        copy.selectFirstSubsection();
-        //copy.setDisplayTag("Program", tagFont, new Color(0xFF0000), tagForegroundColor);
-        //copy.isProgram = true;
-        
-        copy.lyricsPanel.selectSubsection(sectionIndex, subsectionIndex);
-        copy.currentPreviewPanel.setAsCurrentPreviewPanel();
+    if (!isProgram) {
+      MainTabbedPane parent = (MainTabbedPane)getParent();
+      LyricsPreviewPanel copy = new LyricsPreviewPanel(lyrics, fonts, true);
+      copy.selectFirstSubsection();
 
-        SearchField.getInstance().setEnabled(false);
-        MainSplitPane.getInstance().setBottomPanel(copy, lyrics.getTitle());
-        SearchField.getInstance().setEnabled(true);
-      }
+      copy.lyricsPanel.selectSubsection(sectionIndex, subsectionIndex);
+      copy.currentPreviewPanel.setAsCurrentPreviewPanel();
+
+      SearchField.getInstance().setEnabled(false);
+      MainSplitPane.getInstance().setBottomPanel(copy, lyrics.getTitle());
+      SearchField.getInstance().setEnabled(true);
+    }
   }
   
   public void showCurrentPreviewPanel () {

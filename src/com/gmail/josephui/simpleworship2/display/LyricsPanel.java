@@ -5,27 +5,21 @@ import com.gmail.josephui.simpleworship2.display.event.LyricsSelectionListener;
 import com.gmail.josephui.simpleworship2.models.Lyrics;
 import com.gmail.josephui.simpleworship2.models.Section;
 import com.gmail.josephui.simpleworship2.models.Subsection;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import static javax.swing.SwingConstants.CENTER;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -34,15 +28,11 @@ import javax.swing.event.ListSelectionListener;
  * @author Joseph Hui <josephui@gmail.com>
  */
 public class LyricsPanel extends JPanel {
-  private final Lyrics lyrics;
-  private final LyricsPanel thisLyricsPanel;
   private final LyricsPreviewPanel thisLyricsPreviewPanel;
-  private ArrayList<SectionPanel> sectionPanels;
-  private ArrayList<LyricsSelectionListener> lyricsSelectionListeners;
+  private final ArrayList<SectionPanel> sectionPanels;
+  private final ArrayList<LyricsSelectionListener> lyricsSelectionListeners;
   
   public LyricsPanel (Lyrics lyrics, LyricsPreviewPanel lyricsPreviewPanel) {
-    this.lyrics = lyrics;
-    thisLyricsPanel = this;
     thisLyricsPreviewPanel = lyricsPreviewPanel;
     
     lyricsSelectionListeners = new ArrayList();
@@ -55,18 +45,25 @@ public class LyricsPanel extends JPanel {
       SectionPanel sp = new SectionPanel(section, index++);
       
       sectionPanels.add(sp);
-      
       add(sp);
     }
   }
   
   public void selectSubsection (int sectionIndex, int subsectionIndex) {
-      SectionPanel.SubsectionList list = sectionPanels.get(sectionIndex).subsectionLists[0];
-      list.setSelectedIndex(subsectionIndex);
-      fireListSelectionListeners(list);
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+    
+    SectionPanel.SubsectionList list = sectionPanels.get(sectionIndex).subsectionLists[0];
+    list.setSelectedIndex(subsectionIndex);
+    fireListSelectionListeners(list);
   }
   
   public void selectFirstSubsection () {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+
     if (!sectionPanels.isEmpty()) {
       SectionPanel panel = sectionPanels.get(0);
       if (panel.subsectionLists.length > 0) {
@@ -88,10 +85,18 @@ public class LyricsPanel extends JPanel {
   }
   
   public void addLyricsSelectionListener (LyricsSelectionListener listener) {
-      lyricsSelectionListeners.add(listener);
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+
+    lyricsSelectionListeners.add(listener);
   }
   
   void updateSubsectionLists (Section selectedSection, SectionPanel.SubsectionList originList, int index) {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+
     for (SectionPanel sectionPanel : sectionPanels) {
       for (SectionPanel.SubsectionList subsectionList : sectionPanel.subsectionLists) {
         if (subsectionList == originList) {
@@ -102,7 +107,6 @@ public class LyricsPanel extends JPanel {
             sectionPanel.subsectionLists[0].requestFocus();
           }
           subsectionList.setSelectedIndex(index);
-          //System.out.println(subsectionList.getSelectedValue());
         } else {
           subsectionList.clearSelection();
         }
@@ -140,7 +144,6 @@ public class LyricsPanel extends JPanel {
         )
       );
       
-      //setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
       setLayout(new GridLayout(1, 2));
       
       for (SubsectionList list : subsectionLists) {
@@ -151,13 +154,10 @@ public class LyricsPanel extends JPanel {
     }
     
     class SubsectionList extends JList {
-      SubsectionList thisSubsectionList;
         
       SubsectionList (Object[] list, ComponentOrientation co) {
         super(list);
         setComponentOrientation(co);
-        
-        thisSubsectionList = this;
 
         setBorder(null);
         setVisibleRowCount(section.getSubsections().size());
@@ -166,7 +166,7 @@ public class LyricsPanel extends JPanel {
           @Override
           public void valueChanged(ListSelectionEvent e) {
             if (e.getValueIsAdjusting()) {
-              fireListeners(e.getSource(), thisSubsectionList.getSelectedIndex());
+              fireListeners(e.getSource(), SubsectionList.this.getSelectedIndex());
             }
           }
         });
@@ -174,7 +174,7 @@ public class LyricsPanel extends JPanel {
         addKeyListener(new KeyAdapter () {
           @Override
           public void keyPressed(KeyEvent e) {
-            int index = thisSubsectionList.getSelectedIndex();
+            int index = SubsectionList.this.getSelectedIndex();
             switch (e.getKeyCode()) {
               case KeyEvent.VK_UP:
                 fireListeners(e.getSource(), index-1);
@@ -195,7 +195,7 @@ public class LyricsPanel extends JPanel {
             @Override
             public void mouseClicked (MouseEvent e) {
               if (e.getClickCount() == 2 && thisLyricsPreviewPanel != null) {
-                thisLyricsPreviewPanel.setAsProgram(sectionIndex, thisSubsectionList.getSelectedIndex());
+                thisLyricsPreviewPanel.setAsProgram(sectionIndex, SubsectionList.this.getSelectedIndex());
               }
             }
         });
@@ -211,7 +211,7 @@ public class LyricsPanel extends JPanel {
       void fireListeners (Object source, int index) {
         Section s = section;
         int i = index;
-        SubsectionList pointer = thisSubsectionList;
+        SubsectionList pointer = SubsectionList.this;
         
         if (index < 0) {
           if (section.getPrevSection() == null) {

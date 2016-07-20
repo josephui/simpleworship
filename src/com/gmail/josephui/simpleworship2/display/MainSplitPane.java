@@ -4,12 +4,14 @@ import javax.swing.JLabel;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 /**
  * @xToSelf Thread-safe
  * @author Joseph Hui <josephui@gmail.com>
  */
-public class MainSplitPane extends JSplitPane {
+public final class MainSplitPane extends JSplitPane {
   private static final MainSplitPane instance;
   
   static {
@@ -25,18 +27,26 @@ public class MainSplitPane extends JSplitPane {
   private volatile MainTabbedPane topTabbedPane;
   private volatile JTabbedPane bottomTabbedPane;
   private LyricsPreviewPanel bottomPreviewPanel;
+  private final JLabel emptyLabel;
   
   private MainSplitPane () {
     super(VERTICAL_SPLIT, true);
     
     setBorder(null);
     setOneTouchExpandable(true);
-    setTopComponent(new JLabel());
+    setTopComponent(emptyLabel = new JLabel());
     setBottomComponent(new JLabel());
     
     setDividerLocation(0.5d);
     setResizeWeight(0.5d);
+  }
+  
+  private void refresh () {  
+    setDividerLocation(0.5d);
+    setResizeWeight(0.5d);
     
+    revalidate();
+    repaint();
   }
   
   public void setTopPane (MainTabbedPane pane) {
@@ -46,9 +56,25 @@ public class MainSplitPane extends JSplitPane {
 
     if (topTabbedPane == null) {
       setTopComponent(topTabbedPane = pane);
+      topTabbedPane.revalidate();
+      topTabbedPane.repaint();
+      
+      topTabbedPane.addChangeListener(new ChangeListener () {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+          if(topTabbedPane.getTabCount() == 0) {
+            topTabbedPane.removeChangeListener(this);
+            
+            remove(topTabbedPane);
+            topTabbedPane = null;
+            setTopComponent(emptyLabel);
+            
+            refresh();
+          }
+        }
+      });
 
-      setDividerLocation(0.5d);
-      setResizeWeight(0.5d);
+      refresh();
     }
   }
   
@@ -67,9 +93,10 @@ public class MainSplitPane extends JSplitPane {
     }
     
     bottomTabbedPane.add(bottomPreviewPanel = lyricsPreviewPanel, panelName);
+    bottomTabbedPane.revalidate();
+    bottomTabbedPane.repaint();
     
-    setDividerLocation(0.5d);
-    setResizeWeight(0.5d);
+    refresh();
   }
   
   public void showCurrentPreviewPanel () {
@@ -78,5 +105,14 @@ public class MainSplitPane extends JSplitPane {
     }
 
     bottomPreviewPanel.showCurrentPreviewPanel();
+  }
+  
+  public void repaintPreviewPanels () {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException ("Not invoked from eventDispatchThread");
+    }
+
+      MainTabbedPane.getInstance().repaint();
+      bottomPreviewPanel.repaint();
   }
 }

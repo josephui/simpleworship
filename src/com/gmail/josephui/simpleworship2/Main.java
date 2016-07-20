@@ -36,7 +36,7 @@ public class Main {
     FileInputStream input = null;
     
     try {
-      config.load(input = new FileInputStream(configPath));
+      config.load(input = new FileInputStream(configPath)); // TODO: Load with Reader
     } finally {
       if (input != null) {
         input.close();
@@ -78,6 +78,7 @@ public class Main {
   
   public static void setProperty (String name, String value) {
     config.setProperty(name, value);
+    // Save using Writer to config file
   }
   
   public static String getProperty (String name) {
@@ -95,6 +96,7 @@ public class Main {
       
       try {
           int bgRgb = Integer.decode(backgroundString);
+          System.out.println(Integer.toHexString(bgRgb));
           return background = new Color(bgRgb);
       } catch (NumberFormatException e) {
           try {

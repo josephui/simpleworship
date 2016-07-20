@@ -9,6 +9,12 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -78,6 +84,10 @@ public class PreviewPanel extends JPanel {
     this.tagImage = tagImage;
   }
   
+  private void drawNiceString (Graphics2D g, String text, int x, int y) {
+      
+  }
+  
   @Override
   protected void paintComponent (Graphics g) {
     super.paintComponent(g);
@@ -118,11 +128,14 @@ public class PreviewPanel extends JPanel {
         int y = (int)(programHeight * Double.parseDouble(Main.getProperty("margin_top")));
 
         Graphics2D g2 = lyricsImage.createGraphics();
+        
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
         g2.setFont(fonts[i]);
-        g2.setColor(Color.GREEN);
         FontMetrics metrics = g2.getFontMetrics();
-
+        FontRenderContext frc = g2.getFontRenderContext();
+        
         for (int j = 0; j < allHalves[i].size(); j++) {
           String line = allHalves[i].get((i == 0) ? j : allHalves[i].size() - j - 1);
 
@@ -134,8 +147,19 @@ public class PreviewPanel extends JPanel {
           int x = (programWidth - w) / 2;
 
           // If it's the bottom lyrics, we need to invert y
+          g2.setColor(Color.WHITE);
           g2.drawString(line, x, (i == 0) ? y : programHeight - y);
-
+//*          
+          TextLayout textTl = new TextLayout(line, fonts[i], frc);
+          Shape outline = textTl.getOutline(null);
+          Rectangle outlineBounds = outline.getBounds();
+          AffineTransform transform = g2.getTransform();
+          transform.translate(x, (i == 0) ? y : programHeight - y);
+          g2.transform(transform);
+          g2.setColor(Color.BLACK);
+          g2.draw(outline);
+          g2.setClip(outline);
+//*/
           y += (i == 0) ? metrics.getDescent() : metrics.getAscent();
         }
       }
@@ -157,6 +181,9 @@ public class PreviewPanel extends JPanel {
 
     g.setColor(Color.RED);
     g.drawRect(x, y, w, h);
+    
+    g.setColor(Color.DARK_GRAY);
+    g.drawRect(newX, newY, newWidth, newHeight);
 
     g.drawImage(tagImage, newX, newY, null);
   }

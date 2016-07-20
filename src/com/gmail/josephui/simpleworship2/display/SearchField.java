@@ -19,7 +19,7 @@ import javax.swing.event.DocumentListener;
  * @xToSelf Thread-safe
  * @author Joseph Hui <josephui@gmail.com>
  */
-public class SearchField extends JTextField {
+public final class SearchField extends JTextField {
   private static final String GHOST_TEXT = "Search Lyrics by Title or Content";
   
   private static final SearchField instance;
