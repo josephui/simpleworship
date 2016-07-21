@@ -16,8 +16,8 @@
  * along with SimpleWorship.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.gmail.josephui.simpleworship2.display.event;
+package com.gmail.josephui.simpleworship2.event;
 
-public interface LyricsSelectionListener {
-    void selectionChanged (LyricsSelectionEvent e);
+public interface ConfigChangeListener {
+  public void configChanged (ConfigChangeEvent e);
 }

@@ -1,5 +1,24 @@
+/**
+ * This file is part of SimpleWorship.
+ * Copyright (C) 2016 Joseph Hui
+ * 
+ * SimpleWorship is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * SimpleWorship is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with SimpleWorship.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.gmail.josephui.simpleworship2.display;
 
+import com.gmail.josephui.simpleworship2.Config;
 import com.gmail.josephui.simpleworship2.Main;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -9,6 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.BorderFactory;
 import javax.swing.JComboBox;
@@ -17,10 +37,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 
-/**
- * @xToSelf Thread-safe
- * @author Joseph Hui <josephui@gmail.com>
- */
 public final class OptionPanel extends JPanel {
   private static final OptionPanel instance;
   
@@ -130,7 +146,13 @@ public final class OptionPanel extends JPanel {
         @Override
         public void actionPerformed(ActionEvent ae) {
           final int index = getSelectedIndex();
-          Main.setProperty("display_device", getSelectedIndex() + "");
+          
+          try {
+            Config.putAndStore("display_device", getSelectedIndex() + "");
+          } catch (IOException ioe) {
+            System.err.println("Unable to store `display_device` property after put");
+            ioe.printStackTrace();
+          }
           
           SwingUtilities.invokeLater(new Runnable () {
             @Override

@@ -1,7 +1,27 @@
+/**
+ * This file is part of SimpleWorship.
+ * Copyright (C) 2016 Joseph Hui
+ * 
+ * SimpleWorship is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * SimpleWorship is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with SimpleWorship.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.gmail.josephui.simpleworship2.display;
 
+import com.gmail.josephui.simpleworship2.Config;
 import com.gmail.josephui.simpleworship2.Main;
 import com.gmail.josephui.simpleworship2.models.Subsection;
+import java.awt.BasicStroke;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Font;
@@ -12,6 +32,7 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
@@ -21,10 +42,6 @@ import java.util.List;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-/**
- * @xToSelf Thread-safe
- * @author Joseph Hui <josephui@gmail.com>
- */
 public class PreviewPanel extends JPanel {
   private static final Font TAG_FONT  = new Font("Tahoma", Font.BOLD, 12);
   private static final int TAG_MARGIN = 5;
@@ -125,7 +142,8 @@ public class PreviewPanel extends JPanel {
       List<String>[] allHalves = subsection.getAllHalves();
     
       for (int i = 0; i < allHalves.length; i++) {
-        int y = (int)(programHeight * Double.parseDouble(Main.getProperty("margin_top")));
+        // i=0 means topHalf, i=1 means bottomHalf
+        int y = (i == 0) ? (int)(programHeight * Config.getDouble("margin_top")) : (int)(programHeight * Config.getDouble("margin_bottom"));
 
         Graphics2D g2 = lyricsImage.createGraphics();
         
@@ -134,34 +152,47 @@ public class PreviewPanel extends JPanel {
 
         g2.setFont(fonts[i]);
         FontMetrics metrics = g2.getFontMetrics();
-        FontRenderContext frc = g2.getFontRenderContext();
+        //FontRenderContext frc = g2.getFontRenderContext();
         
         for (int j = 0; j < allHalves[i].size(); j++) {
           String line = allHalves[i].get((i == 0) ? j : allHalves[i].size() - j - 1);
-
           y += (i == 0) ? metrics.getAscent() : metrics.getDescent();
 
-          Rectangle2D rectangle = metrics.getStringBounds(line, g2);
+          FontRenderContext frc = g2.getFontRenderContext();
+          TextLayout textTl = new TextLayout(line, fonts[i], frc);
+
+          Rectangle2D rectangle = textTl.getBounds();//metrics.getStringBounds(line, g2);
 
           int w = (int)rectangle.getWidth();
           int x = (programWidth - w) / 2;
 
-          // If it's the bottom lyrics, we need to invert y
-          g2.setColor(Color.WHITE);
-          g2.drawString(line, x, (i == 0) ? y : programHeight - y);
-//*          
-          TextLayout textTl = new TextLayout(line, fonts[i], frc);
-          Shape outline = textTl.getOutline(null);
-          Rectangle outlineBounds = outline.getBounds();
           AffineTransform transform = g2.getTransform();
           transform.translate(x, (i == 0) ? y : programHeight - y);
-          g2.transform(transform);
+          
+          Shape outline = textTl.getOutline(transform);
+          
+          /*
+          g3.setStroke(new Stroke () {
+            BasicStroke stroke1 = new BasicStroke(4f);
+            BasicStroke stroke2 = new BasicStroke(0.5f);
+            @Override
+            public Shape createStrokedShape(Shape p) {
+              return stroke2.createStrokedShape(stroke1.createStrokedShape(p));
+            }
+          });*/
+          
+          g2.setStroke(new BasicStroke(5f));
           g2.setColor(Color.BLACK);
           g2.draw(outline);
-          g2.setClip(outline);
-//*/
+          
+          //g3.setStroke(new BasicStroke(0f));
+          g2.setColor(Color.WHITE);
+          g2.fill(outline);
+          
+          // Offset stuff
           y += (i == 0) ? metrics.getDescent() : metrics.getAscent();
         }
+        g2.dispose();
       }
     }
     
@@ -169,10 +200,10 @@ public class PreviewPanel extends JPanel {
     g.drawImage(scaledImage, newX, newY, null);
     
     // Now we draw the red margin rectangle
-    int marginLeft   = (int)(newWidth * Double.parseDouble(Main.getProperty("margin_left")));
-    int marginTop    = (int)(newHeight * Double.parseDouble(Main.getProperty("margin_top")));
-    int marginRight  = (int)(newWidth * Double.parseDouble(Main.getProperty("margin_right")));
-    int marginBottom = (int)(newHeight * Double.parseDouble(Main.getProperty("margin_bottom")));
+    int marginLeft   = (int)(newWidth * Config.getDouble("margin_left"));
+    int marginTop    = (int)(newHeight * Config.getDouble("margin_top"));
+    int marginRight  = (int)(newWidth * Config.getDouble("margin_right"));
+    int marginBottom = (int)(newHeight * Config.getDouble("margin_bottom"));
 
     int x = newX + marginLeft;
     int y = newY + marginTop;

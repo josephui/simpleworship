@@ -1,5 +1,24 @@
+/**
+ * This file is part of SimpleWorship.
+ * Copyright (C) 2016 Joseph Hui
+ * 
+ * SimpleWorship is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * SimpleWorship is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with SimpleWorship.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.gmail.josephui.simpleworship2.display;
 
+import java.awt.Component;
 import javax.swing.JLabel;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -7,10 +26,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-/**
- * @xToSelf Thread-safe
- * @author Joseph Hui <josephui@gmail.com>
- */
 public final class MainSplitPane extends JSplitPane {
   private static final MainSplitPane instance;
   
@@ -104,7 +119,9 @@ public final class MainSplitPane extends JSplitPane {
       throw new RuntimeException ("Not invoked from eventDispatchThread");
     }
 
-    bottomPreviewPanel.showCurrentPreviewPanel();
+    if (bottomPreviewPanel != null) {
+      bottomPreviewPanel.showCurrentPreviewPanel();
+    }
   }
   
   public void repaintPreviewPanels () {
@@ -112,7 +129,14 @@ public final class MainSplitPane extends JSplitPane {
       throw new RuntimeException ("Not invoked from eventDispatchThread");
     }
 
-      MainTabbedPane.getInstance().repaint();
+    MainTabbedPane.getInstance().repaint();
+      
+    if (bottomPreviewPanel != null) {
       bottomPreviewPanel.repaint();
+    }
+  }
+  
+  public boolean arePanelsEmpty () {
+    return topTabbedPane == null && bottomTabbedPane == null;
   }
 }

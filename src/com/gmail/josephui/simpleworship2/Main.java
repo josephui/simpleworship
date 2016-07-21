@@ -1,6 +1,25 @@
+/**
+ * This file is part of SimpleWorship.
+ * Copyright (C) 2016 Joseph Hui
+ * 
+ * SimpleWorship is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * SimpleWorship is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with SimpleWorship.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.gmail.josephui.simpleworship2;
 
 import com.gmail.josephui.simpleworship2.display.MainFrame;
+import com.gmail.josephui.simpleworship2.display.SearchField;
 import com.gmail.josephui.simpleworship2.file.LyricsParser;
 import com.gmail.josephui.simpleworship2.models.Lyrics;
 import java.awt.Color;
@@ -15,10 +34,6 @@ import java.util.Properties;
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 
-/**
- *
- * @author Joseph Hui <josephui@gmail.com>
- */
 public class Main {
   public static final String APPLICATION_NAME        = "SimpleWorship2";
   public static final String DEFAULT_CONFIG_PATH     = "config.properties";
@@ -30,18 +45,6 @@ public class Main {
   static {
     config = new Properties();
     allLyrics = new ArrayList();
-  }
-  
-  private static void loadConfigProperties (String configPath) throws IOException {
-    FileInputStream input = null;
-    
-    try {
-      config.load(input = new FileInputStream(configPath)); // TODO: Load with Reader
-    } finally {
-      if (input != null) {
-        input.close();
-      }
-    }
   }
   
   private static void loadLyrics (String lyricsDirPath) throws IOException {
@@ -81,33 +84,6 @@ public class Main {
     // Save using Writer to config file
   }
   
-  public static String getProperty (String name) {
-    return config.getProperty(name);
-  }
-  
-  private static Object background;
-          
-  public static Object getBackground () {
-      if (background != null) {
-          return background;
-      }
-      
-      String backgroundString = getProperty("background");
-      
-      try {
-          int bgRgb = Integer.decode(backgroundString);
-          System.out.println(Integer.toHexString(bgRgb));
-          return background = new Color(bgRgb);
-      } catch (NumberFormatException e) {
-          try {
-            return background = ImageIO.read(new File(backgroundString));
-          } catch (IOException ioe) {
-              ioe.printStackTrace();
-              return null;
-          }
-      }
-  }
-  
   public static List<Lyrics> getAllLyrics () {
     return Collections.unmodifiableList(allLyrics);
   }
@@ -120,9 +96,10 @@ public class Main {
     if (args.length > 0) {
       configPath = args[0];
     }
-    loadConfigProperties(configPath);
+    Config.setConfigPath(configPath);
+    Config.load();
     
-    String lyricsDirPath = getProperty("lyrics_dir_path");
+    String lyricsDirPath = Config.getString("lyrics_dir_path");
     if (lyricsDirPath == null) {
       lyricsDirPath = DEFAULT_LYRICS_DIR_PATH;
     }
@@ -139,6 +116,7 @@ public class Main {
       @Override
       public void run() {
         MainFrame.getInstance().setVisible(true);
+        SearchField.getInstance().requestFocusInWindow();
       }
     });
   }
