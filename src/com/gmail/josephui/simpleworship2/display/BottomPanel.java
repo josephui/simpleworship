@@ -37,14 +37,14 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 
-public final class OptionPanel extends JPanel {
-  private static final OptionPanel instance;
+public final class BottomPanel extends JPanel {
+  private static final BottomPanel instance;
   
   static {
-    instance = new OptionPanel();
+    instance = new BottomPanel();
   }
   
-  public static OptionPanel getInstance () {
+  public static BottomPanel getInstance () {
     return instance;
   }
   
@@ -136,7 +136,7 @@ public final class OptionPanel extends JPanel {
   private ButtonLabel clearButton;
   private ButtonLabel liveButton;
   
-  private OptionPanel () {
+  private BottomPanel () {
     setBorder(null);
     setLayout(new BorderLayout());
     

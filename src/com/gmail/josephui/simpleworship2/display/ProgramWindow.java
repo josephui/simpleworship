@@ -18,6 +18,11 @@
 
 package com.gmail.josephui.simpleworship2.display;
 
+import com.gmail.josephui.simpleworship2.Config;
+import com.gmail.josephui.simpleworship2.display.MainFrame;
+import static com.gmail.josephui.simpleworship2.display.MainFrame.reloadFonts;
+import com.gmail.josephui.simpleworship2.event.ConfigChangeEvent;
+import com.gmail.josephui.simpleworship2.event.ConfigChangeListener;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -77,6 +82,16 @@ public final class ProgramWindow extends JWindow {
         }
       }
     });
+    
+    Config.addConfigChangeListener(new String[] {
+      "background"
+    }, new ConfigChangeListener () {
+      @Override
+      public void configChanged(ConfigChangeEvent e) {
+        reloadBackground();
+        MainFrame.getInstance().repaint();
+      }
+    });
   }
   
   public BufferedImage getBackgroundImage () {
@@ -99,6 +114,16 @@ public final class ProgramWindow extends JWindow {
   public void setLyricsImage (BufferedImage lyricsImage) {
     this.lyricsImage = lyricsImage;
     repaint();
+  }
+  
+  public void reloadBackground () {
+    Object backgroundObject = MainFrame.reloadAndGetBackgroundObject();
+    
+    if (backgroundObject instanceof Color) {
+        setBackgroundColor((Color)backgroundObject);
+    } else if (backgroundObject instanceof BufferedImage) {
+        setBackgroundImage((BufferedImage)backgroundObject);
+    }
   }
   
   public void setBackgroundColor (Color color) {

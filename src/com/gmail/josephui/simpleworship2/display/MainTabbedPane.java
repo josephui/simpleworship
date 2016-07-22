@@ -94,7 +94,7 @@ public final class MainTabbedPane extends DnDTabbedPane{
       throw new RuntimeException ("Not invoked from eventDispatchThread");
     }
 
-    LyricsPreviewPanel panel = new LyricsPreviewPanel(lyrics, MainFrame.getFonts());
+    LyricsPreviewPanel panel = new LyricsPreviewPanel(lyrics);
     insertTab(lyrics.getTitle(), null, panel, null, getTabCount());
     
     return panel;

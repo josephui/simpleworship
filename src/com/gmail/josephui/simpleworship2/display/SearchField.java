@@ -33,7 +33,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-public final class SearchField extends JTextField {
+public final class SearchField extends GhostTextField {
   private static final String GHOST_TEXT = "Search Lyrics by Title or Content";
   
   private static final SearchField instance;
@@ -51,6 +51,8 @@ public final class SearchField extends JTextField {
   private final SearchResultPanel searchResultPanel;
   
   private SearchField () {
+    super(GHOST_TEXT);
+    
     searchResultPanel = SearchResultPanel.getInstance();
     
     // Toggling of the Search Results
@@ -123,23 +125,6 @@ public final class SearchField extends JTextField {
         searchResultPanel.openSelectedLyrics();
       }
     });
-  }
-
-  @Override
-  protected void paintComponent(Graphics g) {
-    super.paintComponent(g);
-
-    if (getText().isEmpty()) {
-      g.setColor(Color.GRAY);
-
-      FontMetrics metrics   = g.getFontMetrics();
-      Rectangle2D rectangle = metrics.getStringBounds(GHOST_TEXT, g);
-
-      int x = (int)Math.round((getWidth() - rectangle.getWidth()) / 2);
-      int y = (int)Math.round((getHeight() - rectangle.getHeight()) / 2) + metrics.getAscent();
-      
-      g.drawString(GHOST_TEXT, x, y);
-    }
   }
   
   public void resetTextAndTransferFocus () {

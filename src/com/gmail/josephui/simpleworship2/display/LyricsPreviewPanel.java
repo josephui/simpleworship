@@ -41,25 +41,23 @@ public class LyricsPreviewPanel extends JPanel {
   private ConcurrentHashMap<Subsection, PreviewPanel> subsectionToPanelMap;
   
   private PreviewPanel currentPreviewPanel;
-  private Font[] fonts;
   
   private boolean isProgram;
   
   
-  public LyricsPreviewPanel (Lyrics lyrics, Font[] fonts) {
-    this(lyrics, fonts, false);
+  public LyricsPreviewPanel (Lyrics lyrics) {
+    this(lyrics, false);
   }
   
-  public LyricsPreviewPanel (Lyrics lyrics, final Font[] fonts, final boolean isProgram) {
+  public LyricsPreviewPanel (Lyrics lyrics, final boolean isProgram) {
     this.isProgram = isProgram;
     
     subsectionToPanelMap = new ConcurrentHashMap();
     this.lyrics = lyrics;
-    this.fonts = fonts;
     
     for (Section section : lyrics.getSections()) {
       for (Subsection subsection : section.getSubsections()) {
-        subsectionToPanelMap.put(subsection, new PreviewPanel(subsection, fonts, isProgram ? PreviewPanel.PROGRAM_TAG : PreviewPanel.PREVIEW_TAG));
+        subsectionToPanelMap.put(subsection, new PreviewPanel(subsection, isProgram ? PreviewPanel.PROGRAM_TAG : PreviewPanel.PREVIEW_TAG));
       }
     }
     
@@ -88,7 +86,7 @@ public class LyricsPreviewPanel extends JPanel {
             
         add(currentPreviewPanel = subsectionToPanelMap.get(e.getSubsection()), BorderLayout.CENTER);
         
-        if (isProgram && OptionPanel.getInstance().isLive()) {
+        if (isProgram && BottomPanel.getInstance().isLive()) {
           currentPreviewPanel.setAsCurrentPreviewPanel();
         }
         
@@ -105,7 +103,7 @@ public class LyricsPreviewPanel extends JPanel {
 
     if (!isProgram) {
       MainTabbedPane parent = (MainTabbedPane)getParent();
-      LyricsPreviewPanel copy = new LyricsPreviewPanel(lyrics, fonts, true);
+      LyricsPreviewPanel copy = new LyricsPreviewPanel(lyrics, true);
       copy.selectFirstSubsection();
 
       copy.lyricsPanel.selectSubsection(sectionIndex, subsectionIndex);

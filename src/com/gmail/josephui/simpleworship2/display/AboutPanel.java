@@ -19,10 +19,12 @@
 package com.gmail.josephui.simpleworship2.display;
 
 import com.gmail.josephui.simpleworship2.Constants;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
@@ -61,12 +63,8 @@ public class AboutPanel extends JPanel {
     
     add(new HyperlinkLabel(Constants.SOFTWARE_NAME + " " + Constants.SOFTWARE_VERSION, null));
     add(new HyperlinkLabel(Constants.ABOUT_GITHUB, Constants.ABOUT_GITHUB_URI));
-    //add(new JPanel() {{
-    //  setLayout(new GridLayout(2, 1));
-      
-      add(new HassleFreeScrollPane(Constants.ABOUT_VERSE_NAME, new HyperlinkEditorPane(Constants.ABOUT_VERSE_CONTENT), false));
-      add(new HassleFreeScrollPane(Constants.ABOUT_GPLV3_NAME, new HyperlinkEditorPane(Constants.ABOUT_GPLV3_CONTENT), true));
-    //}});
+    add(new HassleFreeScrollPane(Constants.ABOUT_VERSE_NAME, new HyperlinkEditorPane(Constants.ABOUT_VERSE_CONTENT), false));
+    add(new HassleFreeScrollPane(Constants.ABOUT_GPLV3_NAME, new HyperlinkEditorPane(Constants.ABOUT_GPLV3_CONTENT), true));
   }
   
   @Override
@@ -82,6 +80,8 @@ public class AboutPanel extends JPanel {
       setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), title, TitledBorder.CENTER, TitledBorder.DEFAULT_POSITION));
       setViewportView(c);
       setAlignmentX(CENTER_ALIGNMENT);
+      setOpaque(false);
+      getViewport().setOpaque(false);
       
       if (!enableScrollbar) {
         setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_NEVER);
@@ -131,6 +131,7 @@ public class AboutPanel extends JPanel {
       setHorizontalAlignment(CENTER);
       setAlignmentX(CENTER_ALIGNMENT);
       setCursor(new Cursor(Cursor.HAND_CURSOR));
+      setOpaque(false);
       
       addMouseListener(new MouseAdapter() {
         @Override

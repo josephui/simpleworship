@@ -51,6 +51,8 @@ public class PreviewPanel extends JPanel {
   public static final BufferedImage PREVIEW_TAG;
   public static final BufferedImage PROGRAM_TAG;
   
+  private static volatile PreviewPanel currentPreviewPanel;
+  
   static {
     Canvas canvas = new Canvas();
     Graphics g = canvas.getGraphics();
@@ -92,17 +94,12 @@ public class PreviewPanel extends JPanel {
   private volatile BufferedImage lyricsImage;
   
   private final Subsection subsection;
-  private final Font[] fonts;
   private final BufferedImage tagImage;
+  private volatile Font[] currentFonts;
   
-  public PreviewPanel (Subsection subsection, Font[] fonts, BufferedImage tagImage) {
+  public PreviewPanel (Subsection subsection, BufferedImage tagImage) {
     this.subsection = subsection;
-    this.fonts = fonts;
     this.tagImage = tagImage;
-  }
-  
-  private void drawNiceString (Graphics2D g, String text, int x, int y) {
-      
   }
   
   @Override
@@ -136,7 +133,8 @@ public class PreviewPanel extends JPanel {
       g.drawImage(scaledImage, newX, newY, null);
     }
     
-    if (lyricsImage == null || lyricsImage.getWidth() != programWidth || lyricsImage.getHeight() != programHeight) {
+    if (lyricsImage == null || lyricsImage.getWidth() != programWidth || lyricsImage.getHeight() != programHeight || currentFonts != MainFrame.getFonts()) {
+      currentFonts = MainFrame.getFonts();
       lyricsImage = new BufferedImage(programWidth, programHeight, BufferedImage.TYPE_INT_ARGB_PRE);
       
       List<String>[] allHalves = subsection.getAllHalves();
@@ -150,7 +148,7 @@ public class PreviewPanel extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-        g2.setFont(fonts[i]);
+        g2.setFont(currentFonts[i]);
         FontMetrics metrics = g2.getFontMetrics();
         //FontRenderContext frc = g2.getFontRenderContext();
         
@@ -159,9 +157,9 @@ public class PreviewPanel extends JPanel {
           y += (i == 0) ? metrics.getAscent() : metrics.getDescent();
 
           FontRenderContext frc = g2.getFontRenderContext();
-          TextLayout textTl = new TextLayout(line, fonts[i], frc);
+          TextLayout textTl = new TextLayout(line, currentFonts[i], frc);
 
-          Rectangle2D rectangle = textTl.getBounds();//metrics.getStringBounds(line, g2);
+          Rectangle2D rectangle = textTl.getBounds();
 
           int w = (int)rectangle.getWidth();
           int x = (programWidth - w) / 2;
@@ -171,21 +169,10 @@ public class PreviewPanel extends JPanel {
           
           Shape outline = textTl.getOutline(transform);
           
-          /*
-          g3.setStroke(new Stroke () {
-            BasicStroke stroke1 = new BasicStroke(4f);
-            BasicStroke stroke2 = new BasicStroke(0.5f);
-            @Override
-            public Shape createStrokedShape(Shape p) {
-              return stroke2.createStrokedShape(stroke1.createStrokedShape(p));
-            }
-          });*/
-          
           g2.setStroke(new BasicStroke(5f));
           g2.setColor(Color.BLACK);
           g2.draw(outline);
           
-          //g3.setStroke(new BasicStroke(0f));
           g2.setColor(Color.WHITE);
           g2.fill(outline);
           
@@ -193,6 +180,10 @@ public class PreviewPanel extends JPanel {
           y += (i == 0) ? metrics.getDescent() : metrics.getAscent();
         }
         g2.dispose();
+      }
+      
+      if (currentPreviewPanel == this) {
+        setAsCurrentPreviewPanel();
       }
     }
     
@@ -224,6 +215,8 @@ public class PreviewPanel extends JPanel {
       throw new RuntimeException ("Not invoked from eventDispatchThread");
     }
 
+    currentPreviewPanel = this;
+    
     SwingUtilities.invokeLater(new Runnable () {
       @Override
       public void run() {

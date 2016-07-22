@@ -82,6 +82,20 @@ public final class Config {
     return null;
   }
   
+  public static Integer getInteger (String key) {
+    String s = getString(key);
+    
+    if (s == null) {
+      return null;
+    }
+    
+    try {
+      return Integer.parseInt(s);
+    } catch (NumberFormatException nfe) {
+      return null;
+    }
+  }
+  
   public static Double getDouble (String key) {
     String s = getString(key);
     
@@ -130,7 +144,7 @@ public final class Config {
     Set<String> keys = map.keySet();
     
     for (String key : keys) {
-      config.put(key, map.get(key));
+      config.put(key, map.get(key).toString());
     }
     
     fireListeners(map);

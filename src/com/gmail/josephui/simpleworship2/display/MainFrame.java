@@ -19,7 +19,10 @@
 package com.gmail.josephui.simpleworship2.display;
 
 import com.gmail.josephui.simpleworship2.Config;
+import com.gmail.josephui.simpleworship2.Constants;
 import com.gmail.josephui.simpleworship2.Main;
+import com.gmail.josephui.simpleworship2.event.ConfigChangeEvent;
+import com.gmail.josephui.simpleworship2.event.ConfigChangeListener;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -27,6 +30,7 @@ import java.awt.DefaultFocusTraversalPolicy;
 import java.awt.Dimension;
 import java.awt.DisplayMode;
 import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
@@ -56,7 +60,7 @@ public final class MainFrame extends JFrame {
   private static GraphicsDevice defaultScreenDevice;
   private static DisplayMode displayMode;
   
-  private static Font[] fonts;
+  private static volatile Font[] fonts;
   
   static {
     try {
@@ -83,10 +87,21 @@ public final class MainFrame extends JFrame {
       System.out.println(device.toString());
     }
     
-    fonts = new Font[] {
-      new Font(Config.getString("font1_file"), Font.BOLD, Integer.parseInt(Config.getString("font1_size"))),
-      new Font(Config.getString("font2_file"), Font.BOLD, Integer.parseInt(Config.getString("font2_size")))
-    };
+    reloadFonts();
+    Config.addConfigChangeListener(new String[] {
+      "font1_file",
+      "font1_size",
+      "font2_file",
+      "font2_size",
+    }, new ConfigChangeListener () {
+      @Override
+      public void configChanged(ConfigChangeEvent e) {
+        reloadFonts();
+        
+        MainFrame.getInstance().repaint();
+        ProgramWindow.getInstance().repaint();
+      }
+    });
     
     instance = new MainFrame();
   }
@@ -95,12 +110,38 @@ public final class MainFrame extends JFrame {
     return localGraphicsEnvironment.getScreenDevices();
   }
   
+  public static void reloadFonts () {
+    String font1Path = Config.getString("font1_file");
+    String font2Path = Config.getString("font2_file");
+    
+    int font1Type = font1Path.endsWith(".ttf") ? Font.TRUETYPE_FONT : Font.TYPE1_FONT;
+    int font2Type = font2Path.endsWith(".ttf") ? Font.TRUETYPE_FONT : Font.TYPE1_FONT;
+    
+    File font1 = new File(font1Path);
+    File font2 = new File(font2Path);
+    
+    try {
+      fonts = new Font[] {
+        Font.createFont(font1Type, font1).deriveFont(Font.BOLD, Integer.parseInt(Config.getString("font1_size"))),
+        Font.createFont(font2Type, font2).deriveFont(Font.BOLD, Integer.parseInt(Config.getString("font2_size"))),
+      };
+    } catch (IOException | FontFormatException e) {
+      JOptionPane.showMessageDialog(instance, "Font failed to load: " + e, Constants.SOFTWARE_NAME, JOptionPane.WARNING_MESSAGE);
+      e.printStackTrace();
+    }
+  }
+  
   public static Font[] getFonts () {
     return fonts;
   }
   
   private static Object background;
-          
+  
+  public static Object reloadAndGetBackgroundObject () {
+    background = null;
+    return getBackgroundObject();
+  }
+  
   public static Object getBackgroundObject () {
       if (background != null) {
           return background;
@@ -110,7 +151,6 @@ public final class MainFrame extends JFrame {
       
       try {
           int bgRgb = Integer.decode(backgroundString);
-          System.out.println(Integer.toHexString(bgRgb));
           return background = new Color(bgRgb);
       } catch (NumberFormatException e) {
           try {
@@ -138,20 +178,14 @@ public final class MainFrame extends JFrame {
     setTitle(Main.APPLICATION_NAME);
     
     ProgramWindow.getInstance().setGraphicsDevice(MainFrame.getSelectedGraphicsDevice());
-    
-    Object backgroundObject = getBackgroundObject();
-    if (backgroundObject instanceof Color) {
-        ProgramWindow.getInstance().setBackgroundColor((Color)backgroundObject);
-    } else if (backgroundObject instanceof BufferedImage) {
-        ProgramWindow.getInstance().setBackgroundImage((BufferedImage)backgroundObject);
-    }
+    ProgramWindow.getInstance().reloadBackground();
     
     setContentPane(new JPanel() {{
       setLayout(new BorderLayout());
       
       MainSplitPane splitPane   = MainSplitPane.getInstance();
       MainTabbedPane tabbedPane = MainTabbedPane.getInstance();
-      OptionPanel optionPane    = OptionPanel.getInstance();
+      BottomPanel optionPane    = BottomPanel.getInstance();
       
       add(new JPanel() {{
         setLayout(new BorderLayout());
@@ -164,8 +198,18 @@ public final class MainFrame extends JFrame {
             addActionListener(new ActionListener() {
               @Override
               public void actionPerformed(ActionEvent ae) {
-                JOptionPane.showMessageDialog(MainFrame.this, ConfigPanel.getInstance(), "Settings", JOptionPane.PLAIN_MESSAGE);
-                // Pull in new thread to process
+                ConfigPanel configPanel = new ConfigPanel();
+                
+                JOptionPane.showOptionDialog(
+                  MainFrame.this,
+                  configPanel,
+                  "Settings",
+                  JOptionPane.DEFAULT_OPTION,
+                  JOptionPane.PLAIN_MESSAGE,
+                  null,
+                  new JButton[] {configPanel.getOkayButton()},
+                  configPanel.getOkayButton()
+                );
               }
             });
           }});

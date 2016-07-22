@@ -102,7 +102,7 @@ public final class MainSplitPane extends JSplitPane {
       setBottomComponent(bottomTabbedPane = new JTabbedPane () {{
         setBorder(null);
       }});
-      OptionPanel.getInstance().enableButtons();
+      BottomPanel.getInstance().enableButtons();
     } else {
       bottomTabbedPane.removeAll();
     }
